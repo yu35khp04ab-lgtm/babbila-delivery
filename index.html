@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تطبيق التوصيل المحلي - ببيلا</title>
+  <!-- مكتبة تلغرام ويب آب -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <!-- مكتبة الخرائط Leaflet المجانية -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  
+  <style>
+    body { font-family: Tahoma, sans-serif; margin: 0; padding: 0; background-color: #f4f6f9; color: #333; }
+    header { background: #0088cc; color: white; padding: 12px; text-align: center; font-size: 18px; font-weight: bold; }
+    #map { height: 260px; width: 100%; border-bottom: 2px solid #ddd; }
+    .container { padding: 12px; max-width: 600px; margin: auto; }
+    .store-card { background: white; border-radius: 10px; padding: 12px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.08); }
+    .store-title { font-size: 16px; font-weight: bold; color: #0088cc; margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+    .product-item { display: flex; justify-content: space-between; align-items: center; margin: 8px 0; font-size: 14px; }
+    .price { color: #e67e22; font-weight: bold; }
+    .btn { background-color: #27ae60; color: white; border: none; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 13px; }
+    .btn:active { background-color: #219653; }
+    .cart-box { background: #fff; padding: 15px; border-radius: 10px; margin-top: 15px; border: 1px solid #ddd; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+    .cart-title { font-weight: bold; font-size: 16px; margin-bottom: 10px; color: #2c3e50; }
+    .cart-item-row { display: flex; justify-content: space-between; font-size: 13px; margin: 5px 0; border-bottom: 1px dashed #eee; padding-bottom: 4px; }
+    .send-btn { width: 100%; background: #0088cc; color: white; padding: 12px; font-size: 16px; border: none; border-radius: 8px; font-weight: bold; margin-top: 12px; cursor: pointer; text-align: center; }
+    .note { font-size: 11px; color: #7f8c8d; text-align: center; margin-top: 6px; }
+  </style>
+</head>
+<body>
+
+  <header>🛒 دليفري ببيلا - اطلب بكل سلة واحدة</header>
+
+  <!-- خريطة المنطقة -->
+  <div id="map"></div>
+
+  <div class="container">
+    <h3>📍 المحلات المتاحة في منطقتك</h3>
+
+    <!-- 1. سوبرماركت الخير -->
+    <div class="store-card">
+      <div class="store-title">🏪 سوبرماركت الخير</div>
+      <div class="product-item">
+        <span>ربطة خبز (تقديري)</span>
+        <span class="price">2,500 ل.س</span>
+        <button class="btn" onclick="addToCart('سوبرماركت الخير', 'ربطة خبز', 2500)">إضافة</button>
+      </div>
+      <div class="product-item">
+        <span>كيلو رز سكري</span>
+        <span class="price">18,000 ل.س</span>
+        <button class="btn" onclick="addToCart('سوبرماركت الخير', 'كيلو رز سكري', 18000)">إضافة</button>
+      </div>
+      <div class="product-item">
+        <span>ليتر زيت عباد الشمس</span>
+        <span class="price">28,000 ل.س</span>
+        <button class="btn" onclick="addToCart('سوبرماركت الخير', 'ليتر زيت', 28000)">إضافة</button>
+      </div>
+    </div>
+
+    <!-- 2. صيدلية الشفاء -->
+    <div class="store-card">
+      <div class="store-title">💊 صيدلية الشفاء</div>
+      <div class="product-item">
+        <span>سيتامول (شريط)</span>
+        <span class="price">4,000 ل.س</span>
+        <button class="btn" onclick="addToCart('صيدلية الشفاء', 'سيتامول (شريط)', 4000)">إضافة</button>
+      </div>
+      <div class="product-item">
+        <span>فيتامين سي فوار</span>
+        <span class="price">15,000 ل.س</span>
+        <button class="btn" onclick="addToCart('صيدلية الشفاء', 'فيتامين سي فوار', 15000)">إضافة</button>
+      </div>
+    </div>
+
+    <!-- 3. مخبز الكرامة -->
+    <div class="store-card">
+      <div class="store-title">🍞 مخبز وكعك الكرامة</div>
+      <div class="product-item">
+        <span>كيلو كعك مسطح</span>
+        <span class="price">20,000 ل.س</span>
+        <button class="btn" onclick="addToCart('مخبز الكرامة', 'كيلو كعك مسطح', 20000)">إضافة</button>
+      </div>
+    </div>
+
+    <!-- سلة الطلبات -->
+    <div class="cart-box">
+      <div class="cart-title">🛍️ سلة مشترياتك</div>
+      <div id="cart-items">السلة فارغة حالياً... اختر أغراضك من المحلات أعلى</div>
+      <hr style="border:0; border-top:1px solid #eee; margin: 10px 0;">
+      <div style="display:flex; justify-content:space-between; font-size:15px;">
+        <span>المجموع التقديري:</span>
+        <b style="color: #c0392b;"><span id="total-price">0</span> ل.س</b>
+      </div>
+      <button class="send-btn" onclick="submitOrder()">تأكيد وإرسال الطلب الآن 🚀</button>
+      <div class="note">* الأسعار تقديرية، ويتم اعتماد السعر الفعلي بناءً على فاتورة المحل المرفقة.</div>
+    </div>
+  </div>
+
+  <script>
+    // تهيئة تلغرام ويب آب
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+
+    // تهيئة الخريطة على منطقة ببيلا (دمشق)
+    const map = L.map('map').setView([33.4617, 36.3361], 15);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    // إضافة مواقع المحلات على الخريطة كـ Pins
+    L.marker([33.4620, 36.3370]).addTo(map).bindPopup("<b>سوبرماركت الخير</b><br>متوفر مواد تموينية وسكر وزيت.");
+    L.marker([33.4610, 36.3350]).addTo(map).bindPopup("<b>صيدلية الشفاء</b><br>أدوية ومستلزمات طبية.");
+    L.marker([33.4630, 36.3340]).addTo(map).bindPopup("<b>مخبز وكعك الكرامة</b><br>كعك ومخبوزات طازجة.");
+
+    // مصفوفة السلة
+    let cart = [];
+
+    function addToCart(store, item, price) {
+      cart.push({ store, item, price });
+      updateCartUI();
+      // هزة خفيفة للموبايل عند الإضافة (تأكيد تفاعلي)
+      if (tg.HapticFeedback) {
+        tg.HapticFeedback.impactOccurred('medium');
+      }
+    }
+
+    function updateCartUI() {
+      const container = document.getElementById('cart-items');
+      const totalEl = document.getElementById('total-price');
+      
+      if (cart.length === 0) {
+        container.innerHTML = "السلة فارغة حالياً... اختر أغراضك من المحلات أعلى";
+        totalEl.innerText = "0";
+        return;
+      }
+
+      let html = '';
+      let total = 0;
+      cart.forEach((i, index) => {
+        html += `<div class="cart-item-row">
+          <span>• [<b>${i.store}</b>] ${i.item}</span>
+          <span><b>${i.price.toLocaleString()}</b> ل.س</span>
+        </div>`;
+        total += i.price;
+      });
+      container.innerHTML = html;
+      totalEl.innerText = total.toLocaleString();
+    }
+
+    function submitOrder() {
+      if (cart.length === 0) {
+        alert("الرجاء إضافة منتجات للسلة أولاً قبل إرسال الطلب!");
+        return;
+      }
+
+      const orderData = {
+        items: cart,
+        total: document.getElementById('total-price').innerText
+      };
+
+      // إرسال البيانات عبر تليغرام بوت
+      if (tg.sendData) {
+        tg.sendData(JSON.stringify(orderData));
+      } else {
+        // حالة التجربة على متصفح عادي خارج تليغرام
+        alert("تم تجهيز الطلب بنجاح! المجموع: " + orderData.total + " ل.س");
+      }
+    }
+  </script>
+</body>
+</html>
